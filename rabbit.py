@@ -73,7 +73,7 @@ def getShellData():
 
     try:
         PATH = shell.argv[1]
-        OPTION = shell.argv[2]
+        OPTION = shell.argv[2].strip("-")
         KEY = shell.argv[3]
     except:
 	    printHelp("Verify Command Usage, you may want to use no arguments and proceed interactively")
@@ -303,10 +303,13 @@ if __name__ == "__main__":
         original_image_array = bytearray(original_image.tobytes())
         original_image_matrix = list(split(original_image_array,size))
 
-        for i in range(size//2):
-            aux = original_image_matrix[i]
-            original_image_matrix[i] = original_image_matrix[size-1-i]
-            original_image_matrix[size-1-i] = aux
+        image_format = original_image.format.lower()
+
+        if(image_format == 'png'):
+            for i in range(size//2):
+                aux = original_image_matrix[i]
+                original_image_matrix[i] = original_image_matrix[size-1-i]
+                original_image_matrix[size-1-i] = aux
 
         s = r.keystream(len(original_image_array)).encode('ISO-8859-1')
 
@@ -316,7 +319,7 @@ if __name__ == "__main__":
 
         result = Image.frombytes(original_image.mode, original_image.size, encripted_bytes)
 
-        encripted_filename = 'encripted.' + original_image.format.lower()
+        encripted_filename = 'encripted.' + image_format
             
         result.save("./result/" + encripted_filename)
     
@@ -330,16 +333,19 @@ if __name__ == "__main__":
 
         decripted_image_matrix = list(split(bytearray(decripted_bytes),size))
 
-        for i in range(size//2):
-            aux = decripted_image_matrix[size-1-i]
-            decripted_image_matrix[size-1-i] = decripted_image_matrix[i]
-            decripted_image_matrix[i] = aux
+        image_format = encripted_image.format.lower()
+
+        if(image_format == 'png'):
+            for i in range(size//2):
+                aux = decripted_image_matrix[size-1-i]
+                decripted_image_matrix[size-1-i] = decripted_image_matrix[i]
+                decripted_image_matrix[i] = aux
 
         result_image = b''.join(decripted_image_matrix)
 
         result = Image.frombytes(encripted_image.mode, encripted_image.size, result_image)
 
-        decripted_filename = "decripted." + encripted_image.format.lower()
+        decripted_filename = "decripted." + image_format
             
         result.save("./result/" + decripted_filename)
 

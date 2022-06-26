@@ -255,25 +255,25 @@ if __name__ == "__main__":
     #Implementation tp cripto
     r = Rabbit(123456789012345, 0xA6EB561AD2F41727)
     
-    original_image = Image.open("neymar.png")
+    original_image = Image.open("./images/pacman.bmp")
     original_image_array = bytearray(original_image.tobytes())
 
-    s = r.keystream(len(original_image_array)).encode('ISO-8859-1')
-    #s = r.next().derive().to_bytes(16, 'little')
+    #s = r.keystream(len(original_image_array)).encode('ISO-8859-1')
+    s = r.next().derive().to_bytes(16, 'little')
 
     encripted_bytes = xor(original_image.tobytes(), s)
 
     result = Image.frombytes(original_image.mode, original_image.size, encripted_bytes)
         
-    result.save("encripted.png")
+    result.save("encripted.bmp")
     
     # now decripted
-    encripted_image = Image.open("encripted.png")
+    encripted_image = Image.open("encripted.bmp")
     encripted_image_array = bytearray(encripted_image.tobytes())
 
     decripted_bytes = xor(encripted_image.tobytes(), s)
 
     result = Image.frombytes(encripted_image.mode, encripted_image.size, decripted_bytes)
         
-    result.save("decripted.png")
+    result.save("decripted.bmp")
     
