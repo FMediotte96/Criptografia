@@ -3,66 +3,16 @@
 #   R A B B I T   Stream Cipher
 #   by M. Boesgaard, M. Vesterager, E. Zenner (specified in RFC 4503)
 #
+#
+#   Pure Python Implementation by Toni Mattis
+#
 # ------------------------------------------------------------------------------
 
+from operator import le
 from PIL import Image
 from pwn import xor
 
-def split(a, n):
-    k, m = divmod(len(a), n)
-    return (a[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(n))
-
-def testRabbit(): 
-    # --- Official Test Vectors ---
-    
-    # RFC 4503 Appendix A.1 - Testing without IV Setup
-
-    r = Rabbit(0)
-    assert r.next().derive() == 0xB15754F036A5D6ECF56B45261C4AF702
-    assert r.next().derive() == 0x88E8D815C59C0C397B696C4789C68AA7
-    assert r.next().derive() == 0xF416A1C3700CD451DA68D1881673D696
-
-    r = Rabbit(0x912813292E3D36FE3BFC62F1DC51C3AC)
-    assert r.next().derive() == 0x3D2DF3C83EF627A1E97FC38487E2519C
-    assert r.next().derive() == 0xF576CD61F4405B8896BF53AA8554FC19
-    assert r.next().derive() == 0xE5547473FBDB43508AE53B20204D4C5E
-
-    r = Rabbit(0x8395741587E0C733E9E9AB01C09B0043)
-    assert r.next().derive() == 0x0CB10DCDA041CDAC32EB5CFD02D0609B 
-    assert r.next().derive() == 0x95FC9FCA0F17015A7B7092114CFF3EAD
-    assert r.next().derive() == 0x9649E5DE8BFC7F3F924147AD3A947428
-
-    # RFC 4503 Appendix A.2 - Testing with IV Setup
-
-    r = Rabbit(0, 0)
-    assert r.next().derive() == 0xC6A7275EF85495D87CCD5D376705B7ED
-    assert r.next().derive() == 0x5F29A6AC04F5EFD47B8F293270DC4A8D
-    assert r.next().derive() == 0x2ADE822B29DE6C1EE52BDB8A47BF8F66
-
-    r = Rabbit(0, 0xC373F575C1267E59)
-    assert r.next().derive() == 0x1FCD4EB9580012E2E0DCCC9222017D6D
-    assert r.next().derive() == 0xA75F4E10D12125017B2499FFED936F2E
-    assert r.next().derive() == 0xEBC112C393E738392356BDD012029BA7
-
-    r = Rabbit(0, 0xA6EB561AD2F41727)
-    assert r.next().derive() == 0x445AD8C805858DBF70B6AF23A151104D
-    assert r.next().derive() == 0x96C8F27947F42C5BAEAE67C6ACC35B03
-    assert r.next().derive() == 0x9FCBFC895FA71C17313DF034F01551CB
-
-    print("pass all the test")
-
-#Constants
 WORDSIZE = 0x100000000
-A0 = 0x4D34D34D
-A1 = 0xD34D34D3
-A2 = 0x34D34D34
-A3 = 0x4D34D34D
-A4 = 0xD34D34D3
-A5 = 0x34D34D34
-A6 = 0x4D34D34D
-A7 = 0xD34D34D3
-
-A = [A0, A1, A2, A3, A4, A5, A6, A7]
 
 rot08 = lambda x: ((x <<  8) & 0xFFFFFFFF) | (x >> 24)
 rot16 = lambda x: ((x << 16) & 0xFFFFFFFF) | (x >> 16)
@@ -102,8 +52,10 @@ class Rabbit:
         self._buf = 0           # output buffer
         self._buf_bytes = 0     # fill level of buffer
         
-        for _ in range(4):
-            self.next()
+        self.next()
+        self.next()
+        self.next()
+        self.next()
 
         for j in range(8):
             c[j] ^= x[(j + 4) % 8]
@@ -150,8 +102,11 @@ class Rabbit:
         c[6] ^= i2
         c[7] ^= i3
 
-        for _ in range(4):
-            self.next()        
+        self.next()
+        self.next()
+        self.next()
+        self.next()
+        
 
     def next(self):
         '''Proceed to the next internal state'''
@@ -159,10 +114,24 @@ class Rabbit:
         c = self.c
         x = self.x
         b = self.b
-        for i in range(8):
-            temp = c[i] + A[i] + b
-            b = temp // WORDSIZE
-            c[i] = temp % WORDSIZE
+
+        t = c[0] + 0x4D34D34D + b
+        c[0] = t % WORDSIZE
+        t = c[1] + 0xD34D34D3 + t // WORDSIZE
+        c[1] = t % WORDSIZE
+        t = c[2] + 0x34D34D34 + t // WORDSIZE
+        c[2] = t % WORDSIZE
+        t = c[3] + 0x4D34D34D + t // WORDSIZE
+        c[3] = t % WORDSIZE
+        t = c[4] + 0xD34D34D3 + t // WORDSIZE
+        c[4] = t % WORDSIZE
+        t = c[5] + 0x34D34D34 + t // WORDSIZE
+        c[5] = t % WORDSIZE
+        t = c[6] + 0x4D34D34D + t // WORDSIZE
+        c[6] = t % WORDSIZE
+        t = c[7] + 0xD34D34D3 + t // WORDSIZE
+        c[7] = t % WORDSIZE
+        b = t // WORDSIZE
         
         g = [_nsf(x[j], c[j]) for j in range(8)]
         
@@ -243,48 +212,68 @@ class Rabbit:
 
 if __name__ == "__main__":
 
+    import time
+
+    # --- Official Test Vectors ---
+    
+    # RFC 4503 Appendix A.1 - Testing without IV Setup
+
+    r = Rabbit(0)
+    assert r.next().derive() == 0xB15754F036A5D6ECF56B45261C4AF702
+    assert r.next().derive() == 0x88E8D815C59C0C397B696C4789C68AA7
+    assert r.next().derive() == 0xF416A1C3700CD451DA68D1881673D696
+
+    r = Rabbit(0x912813292E3D36FE3BFC62F1DC51C3AC)
+    assert r.next().derive() == 0x3D2DF3C83EF627A1E97FC38487E2519C
+    assert r.next().derive() == 0xF576CD61F4405B8896BF53AA8554FC19
+    assert r.next().derive() == 0xE5547473FBDB43508AE53B20204D4C5E
+
+    r = Rabbit(0x8395741587E0C733E9E9AB01C09B0043)
+    assert r.next().derive() == 0x0CB10DCDA041CDAC32EB5CFD02D0609B 
+    assert r.next().derive() == 0x95FC9FCA0F17015A7B7092114CFF3EAD
+    assert r.next().derive() == 0x9649E5DE8BFC7F3F924147AD3A947428
+
+    # RFC 4503 Appendix A.2 - Testing with IV Setup
+
+    r = Rabbit(0, 0)
+    assert r.next().derive() == 0xC6A7275EF85495D87CCD5D376705B7ED
+    assert r.next().derive() == 0x5F29A6AC04F5EFD47B8F293270DC4A8D
+    assert r.next().derive() == 0x2ADE822B29DE6C1EE52BDB8A47BF8F66
+
+    r = Rabbit(0, 0xC373F575C1267E59)
+    assert r.next().derive() == 0x1FCD4EB9580012E2E0DCCC9222017D6D
+    assert r.next().derive() == 0xA75F4E10D12125017B2499FFED936F2E
+    assert r.next().derive() == 0xEBC112C393E738392356BDD012029BA7
+
+    r = Rabbit(0, 0xA6EB561AD2F41727)
+    assert r.next().derive() == 0x445AD8C805858DBF70B6AF23A151104D
+    assert r.next().derive() == 0x96C8F27947F42C5BAEAE67C6ACC35B03
+    assert r.next().derive() == 0x9FCBFC895FA71C17313DF034F01551CB
+
+    print("pass all the test")
+
     #Implementation tp cripto
-
-    testRabbit()
-
     r = Rabbit(123456789012345, 0xA6EB561AD2F41727)
     
-    size = 16
-    original_image = Image.open("./images/messi.png")
+    original_image = Image.open("neymar.png")
     original_image_array = bytearray(original_image.tobytes())
-    original_image_matrix = list(split(original_image_array,size))
 
-    for i in range(size//2):
-        aux = original_image_matrix[i]
-        original_image_matrix[i] = original_image_matrix[size-1-i]
-        original_image_matrix[size-1-i] = aux
+    s = r.keystream(len(original_image_array)).encode('ISO-8859-1')
+    #s = r.next().derive().to_bytes(16, 'little')
 
-    key = r.keystream(len(original_image_array)).encode('ISO-8859-1')
-
-    result_image = b''.join(original_image_matrix)
-
-    encripted_bytes = xor(result_image, key)
+    encripted_bytes = xor(original_image.tobytes(), s)
 
     result = Image.frombytes(original_image.mode, original_image.size, encripted_bytes)
         
-    result.save("./result/encripted.png")
+    result.save("encripted.png")
     
     # now decripted
-    encripted_image = Image.open("./result/encripted.png")
+    encripted_image = Image.open("encripted.png")
     encripted_image_array = bytearray(encripted_image.tobytes())
 
-    decripted_bytes = xor(encripted_image.tobytes(), key)
+    decripted_bytes = xor(encripted_image.tobytes(), s)
 
-    decripted_image_matrix = list(split(bytearray(decripted_bytes),size))
-
-    for i in range(size//2):
-        aux = decripted_image_matrix[size-1-i]
-        decripted_image_matrix[size-1-i] = decripted_image_matrix[i]
-        decripted_image_matrix[i] = aux
-
-    result_image = b''.join(decripted_image_matrix)
-
-    result = Image.frombytes(encripted_image.mode, encripted_image.size, result_image)
+    result = Image.frombytes(encripted_image.mode, encripted_image.size, decripted_bytes)
         
-    result.save("./result/decripted.png")
+    result.save("decripted.png")
     
