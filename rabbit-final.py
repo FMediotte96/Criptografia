@@ -3,11 +3,8 @@
 #   R A B B I T   Stream Cipher
 #   by M. Boesgaard, M. Vesterager, E. Zenner (specified in RFC 4503)
 #
-#
-#
 # ------------------------------------------------------------------------------
 
-from operator import le
 from PIL import Image
 from pwn import xor
 
@@ -54,7 +51,18 @@ def testRabbit():
 
     print("pass all the test")
 
+#Constants
 WORDSIZE = 0x100000000
+A0 = 0x4D34D34D
+A1 = 0xD34D34D3
+A2 = 0x34D34D34
+A3 = 0x4D34D34D
+A4 = 0xD34D34D3
+A5 = 0x34D34D34
+A6 = 0x4D34D34D
+A7 = 0xD34D34D3
+
+A = [A0, A1, A2, A3, A4, A5, A6, A7]
 
 rot08 = lambda x: ((x <<  8) & 0xFFFFFFFF) | (x >> 24)
 rot16 = lambda x: ((x << 16) & 0xFFFFFFFF) | (x >> 16)
@@ -94,10 +102,8 @@ class Rabbit:
         self._buf = 0           # output buffer
         self._buf_bytes = 0     # fill level of buffer
         
-        self.next()
-        self.next()
-        self.next()
-        self.next()
+        for _ in range(4):
+            self.next()
 
         for j in range(8):
             c[j] ^= x[(j + 4) % 8]
@@ -144,11 +150,8 @@ class Rabbit:
         c[6] ^= i2
         c[7] ^= i3
 
-        self.next()
-        self.next()
-        self.next()
-        self.next()
-        
+        for _ in range(4):
+            self.next()        
 
     def next(self):
         '''Proceed to the next internal state'''
@@ -156,24 +159,10 @@ class Rabbit:
         c = self.c
         x = self.x
         b = self.b
-
-        t = c[0] + 0x4D34D34D + b
-        c[0] = t % WORDSIZE
-        t = c[1] + 0xD34D34D3 + t // WORDSIZE
-        c[1] = t % WORDSIZE
-        t = c[2] + 0x34D34D34 + t // WORDSIZE
-        c[2] = t % WORDSIZE
-        t = c[3] + 0x4D34D34D + t // WORDSIZE
-        c[3] = t % WORDSIZE
-        t = c[4] + 0xD34D34D3 + t // WORDSIZE
-        c[4] = t % WORDSIZE
-        t = c[5] + 0x34D34D34 + t // WORDSIZE
-        c[5] = t % WORDSIZE
-        t = c[6] + 0x4D34D34D + t // WORDSIZE
-        c[6] = t % WORDSIZE
-        t = c[7] + 0xD34D34D3 + t // WORDSIZE
-        c[7] = t % WORDSIZE
-        b = t // WORDSIZE
+        for i in range(8):
+            temp = c[i] + A[i] + b
+            b = temp // WORDSIZE
+            c[i] = temp % WORDSIZE
         
         g = [_nsf(x[j], c[j]) for j in range(8)]
         
