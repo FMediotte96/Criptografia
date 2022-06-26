@@ -291,7 +291,7 @@ if __name__ == "__main__":
 
     #Should we ask for IV?
     #iv = hex(int(input('Enter IV for encryption of Image : ').strip('\n')))
-    #  
+    
     iv = 0xA6EB561AD2F41727
 
     r = Rabbit(KEY, iv)
