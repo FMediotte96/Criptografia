@@ -319,7 +319,7 @@ if __name__ == "__main__":
 
         result = Image.frombytes(original_image.mode, original_image.size, encripted_bytes)
 
-        encripted_filename = 'encripted.' + image_format
+        encripted_filename = 'encrypted.' + image_format
             
         result.save("./result/" + encripted_filename)
     
@@ -345,7 +345,7 @@ if __name__ == "__main__":
 
         result = Image.frombytes(encripted_image.mode, encripted_image.size, result_image)
 
-        decripted_filename = "decripted." + image_format
+        decripted_filename = "decrypted." + image_format
             
         result.save("./result/" + decripted_filename)
 
