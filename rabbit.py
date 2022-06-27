@@ -5,6 +5,8 @@
 #
 # ------------------------------------------------------------------------------
 
+#!/usr/bin/env python3
+
 from PIL import Image
 from pwn import xor
 import sys as shell
