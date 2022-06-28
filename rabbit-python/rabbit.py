@@ -1,10 +1,3 @@
-# ------------------------------------------------------------------------------
-#
-#   R A B B I T   Stream Cipher
-#   by M. Boesgaard, M. Vesterager, E. Zenner (specified in RFC 4503)
-#
-# ------------------------------------------------------------------------------
-
 #!/usr/bin/env python3
 
 from PIL import Image
@@ -278,78 +271,77 @@ class Rabbit:
         
     
 ################################### MAIN PROGRAM ###################################
-if __name__ == "__main__":
 
-    #testRabbit() this run test vectors to check if the rabbit cipher is ok
+#testRabbit() this run test vectors to check if the rabbit cipher is ok
 
-    try:
-        if(len(shell.argv) == 1):
-            getData()
-        else:
-            getShellData()
-    except (ValueError, IndexError) as err:
-        print(err.args[0])
-        shell.exit(1)
+try:
+    if(len(shell.argv) == 1):
+        getData()
+    else:
+        getShellData()
+except (ValueError, IndexError) as err:
+    print(err.args[0])
+    shell.exit(1)
 
-    #Should we ask for IV?
-    #iv = hex(int(input('Enter IV for encryption of Image : ').strip('\n')))
-    
-    iv = 0xA6EB561AD2F41727
+#Should we ask for IV?
+#iv = hex(int(input('Enter IV for encryption of Image : ').strip('\n')))
 
-    r = Rabbit(KEY, iv)
-    
-    size = 16 #blocksize separation apply on image
+iv = 0xA6EB561AD2F41727
 
-    if OPTION == 'E':
-        original_image = Image.open(PATH)
-        original_image_array = bytearray(original_image.tobytes())
-        original_image_matrix = list(split(original_image_array,size))
+r = Rabbit(KEY, iv)
 
-        image_format = original_image.format.lower()
+size = 16 #blocksize separation apply on image
 
-        if(image_format == 'png'):
-            for i in range(size//2):
-                aux = original_image_matrix[i]
-                original_image_matrix[i] = original_image_matrix[size-1-i]
-                original_image_matrix[size-1-i] = aux
+if OPTION == 'E':
+    original_image = Image.open(PATH)
+    original_image_array = bytearray(original_image.tobytes())
+    original_image_matrix = list(split(original_image_array,size))
 
-        s = r.keystream(len(original_image_array)).encode('ISO-8859-1')
+    image_format = original_image.format.lower()
 
-        result_image = b''.join(original_image_matrix)
+    if(image_format == 'png'):
+        for i in range(size//2):
+            aux = original_image_matrix[i]
+            original_image_matrix[i] = original_image_matrix[size-1-i]
+            original_image_matrix[size-1-i] = aux
 
-        encripted_bytes = xor(result_image, s)
+    s = r.keystream(len(original_image_array)).encode('ISO-8859-1')
 
-        result = Image.frombytes(original_image.mode, original_image.size, encripted_bytes)
+    result_image = b''.join(original_image_matrix)
 
-        encripted_filename = 'encrypted.' + image_format
-            
-        result.save("./result/" + encripted_filename)
-    
-    else: 
-        encripted_image = Image.open(PATH)
-        encripted_image_array = bytearray(encripted_image.tobytes())
+    encripted_bytes = xor(result_image, s)
 
-        s = r.keystream(len(encripted_image_array)).encode('ISO-8859-1')
+    result = Image.frombytes(original_image.mode, original_image.size, encripted_bytes)
 
-        decripted_bytes = xor(encripted_image.tobytes(), s)
+    encripted_filename = 'encrypted.' + image_format
+        
+    result.save("./result/" + encripted_filename)
 
-        decripted_image_matrix = list(split(bytearray(decripted_bytes),size))
+else: 
+    encripted_image = Image.open(PATH)
+    encripted_image_array = bytearray(encripted_image.tobytes())
 
-        image_format = encripted_image.format.lower()
+    s = r.keystream(len(encripted_image_array)).encode('ISO-8859-1')
 
-        if(image_format == 'png'):
-            for i in range(size//2):
-                aux = decripted_image_matrix[size-1-i]
-                decripted_image_matrix[size-1-i] = decripted_image_matrix[i]
-                decripted_image_matrix[i] = aux
+    decripted_bytes = xor(encripted_image.tobytes(), s)
 
-        result_image = b''.join(decripted_image_matrix)
+    decripted_image_matrix = list(split(bytearray(decripted_bytes),size))
 
-        result = Image.frombytes(encripted_image.mode, encripted_image.size, result_image)
+    image_format = encripted_image.format.lower()
 
-        decripted_filename = "decrypted." + image_format
-            
-        result.save("./result/" + decripted_filename)
+    if(image_format == 'png'):
+        for i in range(size//2):
+            aux = decripted_image_matrix[size-1-i]
+            decripted_image_matrix[size-1-i] = decripted_image_matrix[i]
+            decripted_image_matrix[i] = aux
 
-    print("Completed operation")
+    result_image = b''.join(decripted_image_matrix)
+
+    result = Image.frombytes(encripted_image.mode, encripted_image.size, result_image)
+
+    decripted_filename = "decrypted." + image_format
+        
+    result.save("./result/" + decripted_filename)
+
+print("Completed operation")
     
