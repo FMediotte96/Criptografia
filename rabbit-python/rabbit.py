@@ -2,7 +2,7 @@
 
 from PIL import Image
 from pwn import xor
-import sys as shell
+import sys
 
 ################################### FUNCTIONS ###################################
 
@@ -51,25 +51,37 @@ def testRabbit():
 
 def printHelp(errorString):
 	global FILENAME
-	raise ValueError('\n'+errorString +'\n\nUsage:\n    python '+ FILENAME +' <PATH> <E/D> <KEY>\n\nThe algorithm can be used interactively if no arguments are used\n')
+	raise ValueError('\n'+errorString +'\n\nUsage:\n    python '+ FILENAME +' <PATH> -<e/d> ' 
+        + '<KEY> <IV>\n\nThe algorithm can be used interactively if no arguments are used\n')
 
 def getData():
-    global PATH, KEY, OPTION
+    global PATH, KEY, OPTION, IV
     PATH = input('Enter path of Image : ').strip('\n')
-    OPTION = str(input("E to encrypt message, D to decrypt >> ").strip('\n'))
+    OPTION = str(input("e to encrypt message, d to decrypt >> ").strip('\n'))
 	
-    if OPTION != "E" and OPTION != "D":
+    if OPTION != "e" and OPTION != "d":
         raise ValueError('Invalid option Value')
 
     KEY = input('Enter Key for encryption/decryption of Image : ').strip('\n')
+    #Should we ask for IV?
+    iv_response = input('Enter IV for encryption of Image : ').strip('\n')
+    if iv_response != '':
+        IV = hex(int(iv_response))
+    else:
+        IV = None
 
 def getShellData():
-    global PATH, KEY, OPTION
+    global PATH, KEY, OPTION, IV
 
     try:
-        PATH = shell.argv[1]
-        OPTION = shell.argv[2].strip("-")
-        KEY = shell.argv[3]
+        PATH = sys.argv[1]
+        OPTION = sys.argv[2].strip("-")
+        KEY = sys.argv[3]
+        if len(sys.argv) == 5 and sys.argv[4] != '':
+            IV = hex(int(sys.argv[4]))
+        else:
+            IV = None
+
     except:
 	    printHelp("Verify Command Usage, you may want to use no arguments and proceed interactively")
 
@@ -90,7 +102,7 @@ A = [A0, A1, A2, A3, A4, A5, A6, A7]
 rot08 = lambda x: ((x <<  8) & 0xFFFFFFFF) | (x >> 24)
 rot16 = lambda x: ((x << 16) & 0xFFFFFFFF) | (x >> 16)
 
-FILENAME = shell.argv[0]
+FILENAME = sys.argv[0]
 
 ################################### RABBIT CLASS ###################################
 
@@ -275,24 +287,22 @@ class Rabbit:
 #testRabbit() this run test vectors to check if the rabbit cipher is ok
 
 try:
-    if(len(shell.argv) == 1):
+    if(len(sys.argv) == 1):
         getData()
     else:
         getShellData()
 except (ValueError, IndexError) as err:
     print(err.args[0])
-    shell.exit(1)
+    sys.exit(1)
 
-#Should we ask for IV?
-#iv = hex(int(input('Enter IV for encryption of Image : ').strip('\n')))
+# if IV == None:
+#     IV = 0xA6EB561AD2F41727
 
-iv = 0xA6EB561AD2F41727
-
-r = Rabbit(KEY, iv)
+r = Rabbit(KEY, IV)
 
 size = 16 #blocksize separation apply on image
 
-if OPTION == 'E':
+if OPTION == 'e':
     original_image = Image.open(PATH)
     original_image_array = bytearray(original_image.tobytes())
     original_image_matrix = list(split(original_image_array,size))
@@ -317,7 +327,7 @@ if OPTION == 'E':
         
     result.save("./result/" + encripted_filename)
 
-else: 
+elif OPTION == 'd': 
     encripted_image = Image.open(PATH)
     encripted_image_array = bytearray(encripted_image.tobytes())
 
@@ -342,6 +352,8 @@ else:
     decripted_filename = "decrypted." + image_format
         
     result.save("./result/" + decripted_filename)
+else:
+    print("Unsupported option")
 
 print("Completed operation")
     
