@@ -12,7 +12,7 @@ python3 rabbit.py \<path> \<option> \<clave>
 
 - \<path>: del archivo a encriptar/desencriptar
 - \<option>: cifrado o descifrado (-E o -D)
-- \<clave>: con la se va a cifrar el documento
+- \<clave>: con la que va a cifrar el documento
 
 En caso de no enviar los argumentos, el programa los solicitará por el shell donde se este llamando al programa.
 
