@@ -10,16 +10,22 @@
     <h1 th:text="${title}" id="title"></h1>
     <div>
         <form th:action="@{/form}" method="post" th:object="${rabbitRequest}" enctype="multipart/form-data">
-            <input th:if="${rabbitRequest.picture != null}" type="hidden" th:field="*{picture}"/>
+            <input th:if="${rabbitRequest.picture != null}" type="hidden" th:field="*{picture}">
             <div>
-                <label for="file">Imagen <br>
-                    <input type="file" name="file">
+                <label for="file">Imagen (*) <br>
+                    <input type="file" name="file" required>
                 </label>
             </div>
 
             <div>
-                <label for="key">Clave <br>
-                    <input type="password" th:field="*{key}" placeholder="Ingrese una clave">
+                <label for="key">Clave (*) <br>
+                    <input type="password" th:field="*{key}" placeholder="Ingrese una clave" required>
+                </label>
+            </div>
+
+            <div>
+                <label for="iv">Vector de inicialización (IV) <br>
+                    <input type="password" th:field="*{iv}" placeholder="Ingrese IV">
                 </label>
             </div>
 

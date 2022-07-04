@@ -13,5 +13,6 @@ import javax.validation.constraints.NotNull;
 public class RabbitRequest {
     private String picture;
     @NotEmpty private String key;
+    private String iv;
     @NotNull private Option option;
 }

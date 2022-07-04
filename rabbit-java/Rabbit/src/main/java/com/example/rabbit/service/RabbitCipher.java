@@ -153,8 +153,9 @@ public class RabbitCipher {
         String[] cmd = {
             path.concat("rabbit.py"),
             path.concat(request.getPicture()),
-            "-".concat(request.getOption().name()),
-            request.getKey()
+            "-".concat(request.getOption().name().toLowerCase()),
+            request.getKey(),
+            request.getIv()
         };
 
         Runtime.getRuntime().exec(cmd);
